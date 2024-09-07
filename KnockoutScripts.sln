@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnockoutScripts", "KnockoutScripts.csproj", "{EE3DF87F-C661-497B-B398-49B668FCDAAE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EE3DF87F-C661-497B-B398-49B668FCDAAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE3DF87F-C661-497B-B398-49B668FCDAAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE3DF87F-C661-497B-B398-49B668FCDAAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE3DF87F-C661-497B-B398-49B668FCDAAE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1292B297-275E-4F14-8014-F3AB4EBA38A7}
+	EndGlobalSection
+EndGlobal

@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace mehongo
 {
-	[BepInPlugin("h3vr.mehongo.KnockoutScripts", "Knockout Scripts", "1.0.0")]
+	[BepInPlugin("h3vr.mehongo.KnockoutScripts", "Knockout Scripts", "1.0.1")]
 	public class KnockoutSyringeScripts : BaseUnityPlugin
 	{
 		internal static KnockoutSyringeScripts Instance { get; private set; }
@@ -24,7 +24,6 @@ namespace mehongo
 		private void Awake()
 		{
 			KnockoutSyringeScripts.Instance = this;
-			base.Logger.LogMessage("Init");
 			Harmony.CreateAndPatchAll(base.GetType(), "MeHongo-KnockoutScripts");
 			// Mod Settings
 			headshotSFXVolume = Config.Bind(knockoutScriptsCatName, "Headshot SFX Volume", 1f, //Ciarence - Default value, only applied if the config entry does not exist
@@ -40,7 +39,6 @@ namespace mehongo
 			// End of Mod Settings
 			// Load Sound
 			string directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-			base.Logger.LogMessage(directoryName);
 			bool flag = Directory.Exists(directoryName);
 			if (flag)
 			{
@@ -50,7 +48,6 @@ namespace mehongo
 					if (flag2)
 					{
 						WWW www = new WWW("file://" + text);
-						base.Logger.LogMessage("file://" + text);
 						base.StartCoroutine(this.LoadHeadshotSound(www));
 					}
 				}
@@ -71,7 +68,6 @@ namespace mehongo
 			AudioClip audioClip = www.GetAudioClip(false, true, AudioType.WAV);
 			audioClip.name = "TranqHeadshotSound";
 			KnockoutSyringeScripts.tranqHeadshotSound.Clips.Add(audioClip);
-			base.Logger.LogMessage(KnockoutSyringeScripts.tranqHeadshotSound.Clips[0].length);
 			yield break;
 		}
 
@@ -93,7 +89,7 @@ namespace mehongo
 
 		//Low Pressure Round Cycle
 		//Handgun
-		[HarmonyPatch(typeof(HandgunSlide), nameof(HandgunSlide.ImpartFiringImpulse))]
+		/*[HarmonyPatch(typeof(HandgunSlide), nameof(HandgunSlide.ImpartFiringImpulse))]
 		[HarmonyPrefix]
 		public static void LowPressureSlide(ref bool __runOriginal, HandgunSlide __instance)
 		{
@@ -115,29 +111,45 @@ namespace mehongo
 					}
 				}
 			}
+		}*/
+		[HarmonyPatch(typeof(Handgun), nameof(Handgun.Fire))]
+		[HarmonyPrefix]
+		private static void LowPressureSlidePrefix(Handgun __instance, ref bool ___m_isSlideLockMechanismEngaged, ref bool __state)
+        {
+			if (!lowPressureCycle.Value && __instance.Chamber && __instance.Chamber.GetRound())
+			{
+				__state = ___m_isSlideLockMechanismEngaged;
+				if (!__instance.Chamber.GetRound().IsHighPressure)
+				{
+					___m_isSlideLockMechanismEngaged = true;
+				}
+			}
+		}
+		[HarmonyPatch(typeof(Handgun), nameof(Handgun.Fire))]
+		[HarmonyPostfix]
+		private static void LowPressureSlidePostfix(Handgun __instance, ref bool ___m_isSlideLockMechanismEngaged, ref bool __state)
+		{
+			if (!lowPressureCycle.Value && __instance.Chamber && __instance.Chamber.GetRound())
+			{
+				if (!__instance.Chamber.GetRound().IsHighPressure)
+				{
+					___m_isSlideLockMechanismEngaged = __state;
+				}
+			}
 		}
 		//Closed Bolt
 		[HarmonyPatch(typeof(ClosedBolt), nameof(ClosedBolt.ImpartFiringImpulse))]
 		[HarmonyPrefix]
 		public static void LowPressureClosedBolt(ref bool __runOriginal, ClosedBolt __instance)
 		{
-			if (lowPressureCycle.Value == false)
+			if (!lowPressureCycle.Value && __runOriginal && __instance.Weapon && __instance.Weapon.Chamber)
 			{
-				if (!__runOriginal) //Ciarence - Is there another patch that wants to skip?
-				{ 
-					return;
-				}
-				if (__instance.Weapon != null)
+				FistVR.FVRFireArmRound bullet = __instance.Weapon.Chamber.GetRound();
+				if (bullet && !bullet.IsHighPressure)
 				{
-					if (__instance.Weapon.Chamber != null)
-					{
-						FistVR.FVRFireArmRound bullet = __instance.Weapon.Chamber.GetRound();
-						if (!bullet.IsHighPressure)
-						{
-							__runOriginal = false;
-						}
-					}
+					__runOriginal = false;
 				}
+				
 			}
 		}
 		//Open Bolt
@@ -145,22 +157,12 @@ namespace mehongo
 		[HarmonyPrefix]
 		public static void LowPressureOpenBolt(ref bool __runOriginal, OpenBoltReceiverBolt __instance)
 		{
-			if (lowPressureCycle.Value == false)
+			if (!lowPressureCycle.Value && __runOriginal && __instance.Receiver && __instance.Receiver.Chamber)
 			{
-				if (!__runOriginal) //Ciarence - Is there another patch that wants to skip?
+				FistVR.FVRFireArmRound bullet = __instance.Receiver.Chamber.GetRound();
+				if (bullet && !bullet.IsHighPressure)
 				{
-					return;
-				}
-				if (__instance.Receiver != null)
-				{
-					if (__instance.Receiver.Chamber != null)
-					{
-						FistVR.FVRFireArmRound bullet = __instance.Receiver.Chamber.GetRound();
-						if (!bullet.IsHighPressure)
-						{
-							__runOriginal = false;
-						}
-					}
+					__runOriginal = false;
 				}
 			}
 		}
@@ -173,7 +175,6 @@ namespace mehongo
 
 			Label label = default(Label);
 			CodeMatcher codeMatcher = new CodeMatcher(instructions, generator);
-			Debug.Log("preMatch");
 			Label label2;
 			codeMatcher.MatchForward(true, new CodeMatch[]
 			{
@@ -188,11 +189,9 @@ namespace mehongo
 				new CodeMatch(new CodeInstruction(OpCodes.Stfld, AccessTools.Field(typeof(Sosig), "m_unconsciousTime")), null),
 				new CodeMatch(new CodeInstruction(OpCodes.Ldarg_0, null), null)
 				});
-			Debug.Log("postMatch");
 			bool flag = !codeMatcher.ReportFailure(__originalMethod, new Action<string>(KnockoutSyringeScripts.Instance.Logger.LogFatal));
 			if (flag)
 			{
-				KnockoutSyringeScripts.Instance.Logger.LogMessage("Patching " + MethodBase.GetCurrentMethod().Name);
 				codeMatcher.InsertAndAdvance(new CodeInstruction[]
 				{
 				new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(KnockoutSyringeScripts), nameof(KnockoutSyringeScripts.multiShotTimerDecay))),
@@ -210,13 +209,7 @@ namespace mehongo
 				new CodeInstruction(OpCodes.Br_S, label2)
 				});
 			}
-			Debug.Log("Pre Code");
 			List<CodeInstruction> list = codeMatcher.Instructions();
-			Debug.Log("code Run");
-			foreach (CodeInstruction codeInstruction in list)
-			{
-				KnockoutSyringeScripts.Instance.Logger.LogMessage(codeInstruction.ToString());
-			}
 			return codeMatcher.InstructionEnumeration();
 		}
 
@@ -235,7 +228,6 @@ namespace mehongo
 			bool flag = !codeMatcher.ReportFailure(__originalMethod, new Action<string>(KnockoutSyringeScripts.Instance.Logger.LogFatal));
 			if (flag)
 			{
-				KnockoutSyringeScripts.Instance.Logger.LogInfo("Patching " + MethodBase.GetCurrentMethod().Name);
 				Label label = (Label)codeMatcher.Instruction.operand;
 				List<CodeInstruction> list = new List<CodeInstruction>();
 				Label label2;
@@ -264,10 +256,6 @@ namespace mehongo
 				});
 			}
 			List<CodeInstruction> list2 = codeMatcher.Instructions();
-			foreach (CodeInstruction codeInstruction in list2)
-			{
-				KnockoutSyringeScripts.Instance.Logger.LogInfo(codeInstruction.ToString());
-			}
 			return codeMatcher.InstructionEnumeration();
 		}
 

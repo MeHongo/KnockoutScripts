@@ -7,6 +7,7 @@ using System.Reflection.Emit;
 using BepInEx;
 using FistVR;
 using HarmonyLib;
+using KnockoutScripts;
 using UnityEngine;
 
 namespace mehongo
@@ -56,6 +57,7 @@ namespace mehongo
 			{
 				base.Logger.LogError("Specified path doesn't exist");
 			}
+		
 		}
 
 		private IEnumerator LoadHeadshotSound(WWW www)
@@ -119,7 +121,7 @@ namespace mehongo
 			if (!lowPressureCycle.Value && __instance.Chamber && __instance.Chamber.GetRound())
 			{
 				__state = ___m_isSlideLockMechanismEngaged;
-				if (!__instance.Chamber.GetRound().IsHighPressure)
+				if (!__instance.Chamber.GetRound().IsHighPressure && __instance.Chamber.GetRound().RoundClass == FireArmRoundClass.MFSyringeKnockout)
 				{
 					___m_isSlideLockMechanismEngaged = true;
 				}
@@ -131,7 +133,7 @@ namespace mehongo
 		{
 			if (!lowPressureCycle.Value && __instance.Chamber && __instance.Chamber.GetRound())
 			{
-				if (!__instance.Chamber.GetRound().IsHighPressure)
+				if (!__instance.Chamber.GetRound().IsHighPressure && __instance.Chamber.GetRound().RoundClass == FireArmRoundClass.MFSyringeKnockout)
 				{
 					___m_isSlideLockMechanismEngaged = __state;
 				}
@@ -145,7 +147,7 @@ namespace mehongo
 			if (!lowPressureCycle.Value && __runOriginal && __instance.Weapon && __instance.Weapon.Chamber)
 			{
 				FistVR.FVRFireArmRound bullet = __instance.Weapon.Chamber.GetRound();
-				if (bullet && !bullet.IsHighPressure)
+				if (bullet && !bullet.IsHighPressure && bullet.RoundClass == FireArmRoundClass.MFSyringeKnockout)
 				{
 					__runOriginal = false;
 				}
@@ -160,7 +162,7 @@ namespace mehongo
 			if (!lowPressureCycle.Value && __runOriginal && __instance.Receiver && __instance.Receiver.Chamber)
 			{
 				FistVR.FVRFireArmRound bullet = __instance.Receiver.Chamber.GetRound();
-				if (bullet && !bullet.IsHighPressure)
+				if (bullet && !bullet.IsHighPressure && bullet.RoundClass == FireArmRoundClass.MFSyringeKnockout)
 				{
 					__runOriginal = false;
 				}
